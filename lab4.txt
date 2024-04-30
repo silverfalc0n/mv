@@ -1,0 +1,56 @@
+Task 1) Extract the horizontal edges of an input image using a suitable edge mask.
+Task 2) Extract the Vertical edges of an input image using a suitable edge mask.
+Task 3) Extract the diagonal edges of an input image using a suitable edge mask.
+Task 4) Perform edge detection for the input image given in the link below:
+https://bit.ly/3SLYCmq
+Suggest a suitable solution to get a proper edge segmentation for the given input image. 
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+# Load the image
+image = cv2.imread("house.png", cv2.IMREAD_GRAYSCALE)
+plt.imshow(image, cmap='gray')
+plt.title('input image in grayscale')
+# Apply Sobel operator for edge detection
+sobel_x = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
+sobel_x = np.uint8(np.absolute(sobel_x))
+
+sobel_y = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
+sobel_y = np.uint8(np.absolute(sobel_y))
+plt.subplot(1,2,1)
+plt.imshow(sobel_x, cmap='gray')
+plt.title('applying sobel filter')
+
+plt.subplot(1,2,2)
+plt.imshow(sobel_y, cmap='gray')
+plt.title('applying sobel filter')
+# Thresholding to extract horizontal edges
+threshold_value = 15
+horizontal_edges = cv2.threshold(sobel_x, threshold_value, 255, cv2.THRESH_BINARY)[1]
+
+threshold_value = 15
+vertical_edges = cv2.threshold(sobel_y, threshold_value, 255, cv2.THRESH_BINARY)[1]
+plt.subplot(1,2,1)
+plt.imshow(horizontal_edges, cmap='gray')
+plt.title('applying sobel filter with threshold')
+
+plt.subplot(1,2,2)
+plt.imshow(vertical_edges, cmap='gray')
+plt.title('applying sobel filter with threshold')
+# diagonal edges
+import numpy as np
+sobel_xy = cv2.Sobel(image, cv2.CV_64F, 1, 1, ksize=3)
+sobel_xy = np.uint8(np.absolute(sobel_y))
+histogram = cv2.calcHist([sobel_xy], [0], None, [256], [0,256])
+plt.imshow(sobel_xy, cmap='gray')
+threshold_value = 30
+sobel_xy = cv2.threshold(sobel_xy, threshold_value, 255, cv2.THRESH_BINARY)[1]
+plt.imshow(sobel_xy, cmap='gray')
+plt.title('applying sobel filter with threshold')
+image = cv2.imread("noisy.jpg", cv2.IMREAD_GRAYSCALE)
+plt.imshow(image, cmap='gray')
+plt.title('input image in grayscale')
+image = cv2.medianBlur(image,5) 
+plt.imshow(image, cmap='gray')
+plt.title('input image in grayscale')

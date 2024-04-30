@@ -1,0 +1,91 @@
+Task 1) Perform Contrast Enhancement using Histogram equalization of a sample image and observe 
+the histogram before and after processing. Provide your inference.
+Task 2) Perform image smoothening of an input image based on ideal filters (take kernels of different size) 
+and gaussian filters. Observe the results.
+Noisy Image url: https://acesse.one/ol6lC
+Task 3) Perform image sharpening of an input image based on ideal filters (take different kernels values).
+ Observe the results.
+
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Task 1: Contrast Enhancement using Histogram Equalization
+def histogram_equalization(image):
+    # Convert image to grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Perform histogram equalization
+    equalized_image = cv2.equalizeHist(gray_image)
+    
+    # Compute histograms
+    hist_original = cv2.calcHist([gray_image], [0], None, [256], [0, 256])
+    hist_equalized = cv2.calcHist([equalized_image], [0], None, [256], [0, 256])
+    
+    # Plot histograms
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(hist_original)
+    plt.title('Original Image Histogram')
+    plt.subplot(1, 2, 2)
+    plt.plot(hist_equalized)
+    plt.title('Equalized Image Histogram')
+    plt.show()
+    
+    # Display images
+    cv2.imshow('Original Image', gray_image)
+    cv2.imshow('Equalized Image', equalized_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# Task 2: Image Smoothening
+def image_smoothening(image, kernel_size):
+    # Applying ideal filters
+    ideal_filter = np.ones((kernel_size, kernel_size), np.float32) / (kernel_size * kernel_size)
+    ideal_smoothed = cv2.filter2D(image, -1, ideal_filter)
+    
+    # Applying Gaussian filters
+    gaussian_smoothed = cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
+    
+    # Display images
+    cv2.imshow('Ideal Smoothened Image', ideal_smoothed)
+    cv2.imshow('Gaussian Smoothened Image', gaussian_smoothed)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# Task 3: Image Sharpening
+def image_sharpening(image, kernel_values):
+    for kernel_value in kernel_values:
+        # Define sharpening kernel
+        kernel = np.array([[-1, -1, -1],
+                           [-1, kernel_value, -1],
+                           [-1, -1, -1]])
+        
+        # Apply sharpening kernel
+        sharpened_image = cv2.filter2D(image, -1, kernel)
+        
+        # Display sharpened image
+        cv2.imshow(f'Sharpened Image (Kernel Value: {kernel_value})', sharpened_image)
+        cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# Load the noisy image
+noisy_image_url = "https://acesse.one/ol6lC"
+noisy_image = cv2.imread(noisy_image_url)
+
+# Task 1: Histogram Equalization
+histogram_equalization(noisy_image)
+
+# Task 2: Image Smoothening
+# Kernel sizes for smoothening
+kernel_sizes = [3, 5, 7]
+
+for kernel_size in kernel_sizes:
+    image_smoothening(noisy_image, kernel_size)
+
+# Task 3: Image Sharpening
+# Different kernel values for image sharpening
+kernel_values = [1, 2, 3]
+
+image_sharpening(noisy_image, kernel_values)

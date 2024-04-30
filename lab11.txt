@@ -1,0 +1,68 @@
+Import a sample video and perform the following steps for object tracking
+a) Import video using cv2. Videocapture
+b) Perform Background Subtraction
+c) Detect the objects and Find contours
+d) Determine the centroid and assign unique object ids
+e) Finally track the objects in the video.
+provide screenshots of your object tracking algorithm. Provide detailed explanation of your method.
+
+
+import cv2
+import numpy as np
+
+# Step a: Import video using cv2.VideoCapture
+cap = cv2.VideoCapture('road_video.mp4')
+
+# Get the video properties for output video
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = int(cap.get(cv2.CAP_PROP_FPS))
+out = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_width, frame_height))
+
+# Step b: Perform Background Subtraction
+background_subtractor = cv2.createBackgroundSubtractorMOG2()
+
+# Initialize variables for object tracking
+object_id = 0
+centroids = {}  # Dictionary to store centroids of objects
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Step B: Background Subtraction
+    fgmask = background_subtractor.apply(frame)
+
+    # Step C: Detect objects and Find contours
+    contours, _ = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        # Step D: Determine the centroid and assign unique object ids
+        area = cv2.contourArea(contour)
+        if area > 2000:  # Arbitrary threshold to filter out small contours
+            x, y, w, h = cv2.boundingRect(contour)
+            centroid_x = int(x + w/2)
+            centroid_y = int(y + h/2)
+
+            if object_id not in centroids:
+                centroids[object_id] = (centroid_x, centroid_y)
+                object_id += 1
+
+            # Step E: Draw bounding box and object id
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.putText(frame,str(object_id),(centroid_x ,centroid_y),cv2.FONT_HERSHEY_SIMPLEX ,1,(255 ,255 ,255))
+
+     # Write the frame with object tracking to output video 
+     out.write(frame)
+
+     # Display the video with object tracking 
+     cv2.imshow('Object Tracking', frame) 
+
+if cv2.waitKey(30) & 0xFF == ord('q'):
+   break 
+
+# Release the video capture object , release the output video writer , and close all windows 
+cap.release() 
+out.release() 
+cv2.destroyAllWindows()

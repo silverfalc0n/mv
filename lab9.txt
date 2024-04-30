@@ -1,0 +1,105 @@
+Task 1: Obtain Region of Interest (ROI) of the given image namely few points for the foreground
+and few points on the background.
+
+Task 2: Compute the GLCM for the selected ROIs and display the min, max and mean value of the selected ROIs
+
+Task 3: Provide a scatter plot considering the features contrast and Correlation and provide your inference
+
+#task 1
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.feature import graycomatrix, graycoprops
+# Task 1: Obtain Region of Interest (ROI) of the given image
+
+# Read the input image
+input_image = cv2.imread('lena.png')
+input_image_rgb = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
+# Select points for foreground and background
+foreground_points = [(100, 100), (200, 150), (250, 200)]
+background_points = [(50, 50), (300, 50), (50, 250)]
+# Create a copy of the image to draw points
+image_with_points = input_image_rgb.copy()
+
+# Draw points on the image
+for point in foreground_points:
+    cv2.circle(image_with_points, point, 5, (255, 0, 0), -1)  # Red color for foreground points
+
+for point in background_points:
+    cv2.circle(image_with_points, point, 5, (0, 255, 0), -1)  # Green color for background points
+# Display the image with points
+plt.imshow(image_with_points)
+plt.title('Image with Points')
+plt.axis('off')
+plt.show()
+
+#task 2
+# Task 2: Compute the GLCM for the selected ROIs
+
+# Convert the input image to grayscale
+gray_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+
+# Define the distances and angles for GLCM
+distances = [1]
+angles = [0, np.pi/4, np.pi/2, 3*np.pi/4]
+
+# Compute GLCM for foreground ROI
+foreground_glcms = []
+for point in foreground_points:
+    patch = gray_image[point[1]-10:point[1]+11, point[0]-10:point[0]+11]
+    glcm = graycomatrix(patch, distances=distances, angles=angles, levels=256, symmetric=True, normed=True)
+    foreground_glcms.append(glcm)
+
+# Compute GLCM for background ROI
+background_glcms = []
+for point in background_points:
+    patch = gray_image[point[1]-10:point[1]+11, point[0]-10:point[0]+11]
+    glcm = graycomatrix(patch, distances=distances, angles=angles, levels=256, symmetric=True, normed=True)
+    background_glcms.append(glcm)
+
+# Compute properties (contrast and correlation) of GLCM
+foreground_contrast = [graycoprops(glcm, 'contrast') for glcm in foreground_glcms]
+foreground_correlation = [graycoprops(glcm, 'correlation') for glcm in foreground_glcms]
+
+background_contrast = [graycoprops(glcm, 'contrast') for glcm in background_glcms]
+background_correlation = [graycoprops(glcm, 'correlation') for glcm in background_glcms]
+
+# Compute min, max, and mean values for selected ROIs
+foreground_contrast_min = np.min(foreground_contrast)
+foreground_contrast_max = np.max(foreground_contrast)
+foreground_contrast_mean = np.mean(foreground_contrast)
+
+foreground_correlation_min = np.min(foreground_correlation)
+foreground_correlation_max = np.max(foreground_correlation)
+foreground_correlation_mean = np.mean(foreground_correlation)
+
+background_contrast_min = np.min(background_contrast)
+background_contrast_max = np.max(background_contrast)
+background_contrast_mean = np.mean(background_contrast)
+
+background_correlation_min = np.min(background_correlation)
+background_correlation_max = np.max(background_correlation)
+background_correlation_mean = np.mean(background_correlation)
+
+print("Foreground Contrast - Min:", foreground_contrast_min, "Max:", foreground_contrast_max, "Mean:", foreground_contrast_mean)
+print("Foreground Correlation - Min:", foreground_correlation_min, "Max:", foreground_correlation_max, "Mean:", foreground_correlation_mean)
+print("Background Contrast - Min:", background_contrast_min, "Max:", background_contrast_max, "Mean:", background_contrast_mean)
+print("Background Correlation - Min:", background_correlation_min, "Max:", background_correlation_max, "Mean:", background_correlation_mean)
+
+#task 3
+
+# Task 3: Scatter plot of Contrast vs Correlation
+
+# Prepare data for scatter plot
+contrast_values = np.concatenate((foreground_contrast, background_contrast))
+correlation_values = np.concatenate((foreground_correlation, background_correlation))
+labels = np.array([0] * len(foreground_contrast) + [1] * len(background_contrast))  # Assign numerical labels
+# Plot the scatter plot
+plt.figure(figsize=(8, 6))
+plt.scatter(contrast_values, correlation_values, c=np.concatenate((labels, labels ,labels, labels)), cmap=plt.cm.brg)
+plt.title('Contrast vs Correlation')
+plt.xlabel('Contrast')
+plt.ylabel('Correlation')
+plt.legend(['Foreground', 'Background'])
+plt.grid(True)
+plt.show()

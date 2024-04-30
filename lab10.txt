@@ -1,0 +1,62 @@
+Consider a grayscale image of a textured surface. Implement the LBP operator to extract local patterns from the image. 
+Investigate how varying the LBP radius and the number of sampling points affects the resulting LBP histograms. 
+Hypothesize how these variations impact the ability to discriminate different textures.
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Function to compute LBP
+def compute_lbp(image, radius, num_points):
+    lbp = np.zeros_like(image)
+    height, width = image.shape
+
+    for y in range(radius, height - radius):
+        for x in range(radius, width - radius):
+            center = image[y, x]
+            lbp_code = 0
+            for i in range(num_points):
+                angle = i * (360 / num_points)
+                x_i = x + int(radius * np.cos(np.radians(angle)))
+                y_i = y - int(radius * np.sin(np.radians(angle)))  # Negative sign because the y-axis is inverted
+                if image[y_i, x_i] >= center:
+                    lbp_code += 2 ** i
+            lbp[y, x] = lbp_code
+
+    return lbp
+
+# Function to plot LBP histogram
+def plot_lbp_histogram(lbp_hist):
+    plt.bar(range(len(lbp_hist)), lbp_hist.ravel())  # Convert to 1D array using ravel()
+    plt.title('LBP Histogram')
+    plt.xlabel('LBP Code')
+    plt.ylabel('Frequency')
+    plt.show()
+# Read the input image
+image = cv2.imread('lena.png', cv2.IMREAD_GRAYSCALE)
+
+# Plot the original image
+plt.imshow(image, cmap='gray')
+plt.title('Original Image')
+plt.axis('off')
+plt.show()
+# Define parameters for LBP
+radius_values = [1, 3, 5]
+num_points_values = [8, 16, 24]
+
+
+# Iterate over different combinations of radius and num_points
+for radius in radius_values:
+    for num_points in num_points_values:
+        # Compute LBP
+        lbp_image = compute_lbp(image, radius, num_points)
+        
+        # Plot the LBP image
+        plt.imshow(lbp_image, cmap='gray')
+        plt.title(f'LBP Image (Radius={radius}, Points={num_points})')
+        plt.axis('off')
+        plt.show()
+        
+        # Compute and plot LBP histogram
+        lbp_hist = cv2.calcHist([lbp_image], [0], None, [2 ** num_points], [0, 2 ** num_points])
+        plot_lbp_histogram(lbp_hist)

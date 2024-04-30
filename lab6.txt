@@ -1,0 +1,131 @@
+Perform image segmentation using Graph-Cut algorithm on a sample image. 
+Initialize a suitable seed point on the image (foreground) and perform the partition of foreground and background. 
+Display the binary mask and also the extracted object.
+
+CHAT-GPT:
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+
+def mouse_callback(event, x, y, flags, param):
+    global seed_point
+    if event == cv2.EVENT_LBUTTONDOWN:
+        seed_point = (x, y)
+
+# Load the sample image
+image = cv2.imread('sample_image.jpg')
+
+# Display the image and select a seed point
+seed_point = None
+cv2.namedWindow('Select Seed Point')
+cv2.setMouseCallback('Select Seed Point', mouse_callback)
+cv2.imshow('Select Seed Point', image)
+cv2.waitKey(0)
+cv2.destroyWindow('Select Seed Point')
+
+# Convert the image to grayscale
+gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+# Create a mask initialized with zeros
+mask = np.zeros_like(gray_image)
+
+# Initialize the foreground and background models
+foreground_model = np.zeros((1, 65), dtype=np.float64)
+background_model = np.zeros((1, 65), dtype=np.float64)
+
+# Define rectangle dimensions around the seed point
+rect = (seed_point[0]-50, seed_point[1]-50, 100, 100)
+
+# Apply GrabCut algorithm to partition foreground and background
+cv2.grabCut(image, mask, rect, background_model, foreground_model, 5, cv2.GC_INIT_WITH_RECT)
+
+# Create a binary mask where 1 represents probable foreground
+# and 0 represents probable background
+binary_mask = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+# Extract object using the binary mask
+extracted_object = cv2.bitwise_and(image, image, mask=binary_mask)
+
+# Display the binary mask
+plt.imshow(binary_mask, cmap='gray')
+plt.title('Binary Mask')
+plt.show()
+
+# Display the extracted object
+extracted_object = cv2.cvtColor(extracted_object, cv2.COLOR_BGR2RGB)
+plt.imshow(extracted_object)
+plt.title('Extracted Object')
+plt.show()
+
+
+ALTERNATE:
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+
+def graph_cut_segmentation(image, seed_point):
+    # Convert image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Create graph
+    G = nx.Graph()
+    
+    # Add nodes for each pixel
+    height, width = gray.shape
+    for i in range(height):
+        for j in range(width):
+            # Add node for each pixel
+            G.add_node((i, j))
+            
+            # Add edges between adjacent pixels
+            if i < height - 1:
+                G.add_edge((i, j), (i + 1, j), capacity=1)
+            if j < width - 1:
+                G.add_edge((i, j), (i, j + 1), capacity=1)
+            
+            # Add edges to terminal nodes (foreground and background)
+            if (i, j) == seed_point:
+                # Connect seed point to source (foreground)
+                G.add_edge("source", (i, j), capacity=np.inf)
+            else:
+                # Connect other pixels to sink (background)
+                G.add_edge((i, j), "sink", capacity=np.inf)
+    
+    # Perform max flow min cut algorithm
+    cut_value, partition = nx.minimum_cut(G, "source", "sink")
+    
+    # Retrieve segmented mask
+    _, partition_set = partition
+    
+    if type(partition_set) == dict:  # Check if partition_set is a dictionary
+        # Extract nodes connected to the source side (foreground)
+        segmented_mask = np.zeros_like(gray)
+        for node, side in partition_set.items():
+            if side == 0 and node != "source":
+                segmented_mask[node] = 255
+    else:
+        print("Error: Unexpected partition set format.")
+        return None
+    
+    return segmented_mask
+
+# Load sample image
+image = cv2.imread('lena.png')
+
+# Initialize seed point (foreground)
+seed_point = (100, 100)  # Example seed point coordinates
+
+# Perform Graph-Cut segmentation
+segmented_mask = graph_cut_segmentation(image, seed_point)
+
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+plt.title('Original Image')
+plt.scatter(seed_point[1], seed_point[0], color='red', marker='x')  # Plot seed point
+plt.subplot(1, 2, 2)
+plt.imshow(segmented_mask, cmap='gray')
+plt.title('Segmented Mask')
+plt.show()

@@ -1,0 +1,65 @@
+Perform Region Growing based segmentation for an input image. 
+Consider 4-pixel neighborhood and use intensity difference as an similarity criteria. 
+Study the impact of seed point selection and noisy input image.
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def region_growing(image, seed, threshold):
+    # Define 4-connected neighborhood
+    neighborhood = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+    # Create a mask to keep track of visited pixels
+    mask = np.zeros_like(image, dtype=np.uint8)
+
+    # Create a segmented image
+    segmented_image = np.zeros_like(image, dtype=np.uint8)
+
+    # Set seed point
+    current_point = seed
+    seed_intensity = image[seed_point]
+
+    # Initialize queue with seed point
+    queue = []
+    queue.append(seed_point)
+
+    while len(queue) > 0:
+        current_point = queue.pop(0)
+        segmented_image[current_point] = 255   # Mark current point as part of the region
+
+        for i in neighborhood:
+            neighbor_point = (current_point[0] + i[0], current_point[1] + i[1])
+
+            # Check if neighbor is within image bounds 
+            if (neighbor_point[0] >= 0 and neighbor_point[1] >= 0 and 
+                neighbor_point[0] < image.shape[0] and neighbor_point[1] < image.shape[1]):
+
+                # Check if neighbor is not visited yet 
+                if mask [neighbor_point]== 255:
+                    continue 
+
+                neighbor_intensity= image [neighbor_ point]
+
+                if abs(int(seed_intensity) - int(neighbor_intensity)) < threshold:
+                    mask [neighbor_ point]=255   # Mark neighbour as visited
+
+    return segmented_image
+
+image=cv2.imread('image.jpg', cv2.IMREAD_GRAYSCALE)
+seed_points=[(50 ,50),(150 ,150),(250 ,250)]
+threshold=20
+
+# Perform region growing segmentation for each seed point 
+for idx ,seed in enumerate(seed_points):
+    segmented_image=region_growing(image ,seed ,threshold)
+
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.imshow(image, cmap='gray')
+plt.title('Original Image')
+plt.scatter(seed[1], seed[0], color='red', marker='x')  # Plot seed point
+plt.subplot(1, 2, 2)
+plt.imshow(segmented_image, cmap='gray')
+plt.title(f'Segmented Image (Seed {idx+1})')
+plt.show()
